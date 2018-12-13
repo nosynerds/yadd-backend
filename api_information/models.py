@@ -7,7 +7,7 @@ class Catalog(models.Model):
     table_name = models.CharField(max_length=200)
     column_name = models.CharField(max_length=200)
     data_type = models.CharField(max_length=30)
-    data_type_length = models.IntegerField()
+    data_type_length = models.IntegerField(null=True)
     data_type_precision = models.IntegerField()
 
 class Schemas(models.Model):
