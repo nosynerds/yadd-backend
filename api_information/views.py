@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from django.http import JsonResponse
 from rest_framework import status
-from .models import Schemas, Tables, Columns
+from .models import Schemas, Tables, Columns, Catalog
 
 def getSchemas(schemas):
     id=[]
@@ -29,6 +29,43 @@ def getTables(tables):
 
     return {"id": id , "schema_name": schema_name ,
             "table_description": table_description, "table_name": table_name}
+
+def getColumns(columns):
+    id = []
+    schema_name = []
+    table_name = []
+    column_name = []
+    column_description = []
+    data_type = []
+    data_type_length = []
+    data_type_precision = []
+
+    for column in columns:
+        id.append(column.id)
+        schema_name.append(column.schema_name)
+        table_name.append(column.table_name)
+        column_name.append(column.column_name)
+        column_description.append(column.column_description)
+
+        column_meta_data = Catalog.objects.filter(column_name=column.column_name,
+                                                  table_name=column.table_name,
+                                                  schema_name=column.schema_name)
+
+
+        if len(column_meta_data)>0:
+            data_type.append(column_meta_data[0].data_type)
+            data_type_length.append(column_meta_data[0].data_type_length)
+            data_type_precision.append(column_meta_data[0].data_type_precision)
+
+        else:
+            data_type.append('')
+            data_type_length.append('')
+            data_type_precision.append('')
+
+    return {"id": id , "schema_name": schema_name ,
+            "column_description": column_description, "table_name": table_name,
+            "column_name": column_name, "data_type": data_type, "data_type_length": data_type_length,
+            "data_type_precision": data_type_precision}
 
 # Create your views here.
 class SchemaView(APIView):
@@ -68,6 +105,32 @@ class TableView(APIView):
         response = {
             "headers": headers,
             "data": getTables(data)
+        }
+
+        return JsonResponse(
+            response,
+            status=status.HTTP_200_OK,
+            safe=False
+        )
+
+
+class ColumnView(APIView):
+
+    # Method GET
+    def get(self, request, *args):
+
+        item_id = request.GET.get('item_id')
+
+        selected_table_name = Tables.objects.filter(id=item_id)[0].table_name
+
+        headers = [f.name for f in Columns._meta.get_fields()]
+        headers += ['data_type', 'data_type_length', 'data_type_precision']
+
+        data = Columns.objects.filter(table_name=selected_table_name)
+
+        response = {
+            "headers": headers,
+            "data": getColumns(data)
         }
 
         return JsonResponse(
